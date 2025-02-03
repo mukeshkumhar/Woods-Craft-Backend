@@ -21,7 +21,7 @@ router
 
 router
   .route("/img-update/:productId")
-  .patch(VerifyAdmin, upload.array("Images", 4), AddImages);
+  .patch(VerifyAdmin, upload.array("images", 4), AddImages);
 
 router
   .route("/update-all-images/:productId")

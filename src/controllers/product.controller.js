@@ -100,15 +100,37 @@ const GetProductDetails = asyncHandler(async (req, res) => {
 // Returns all the product uploaded to the database
 const GetAllProducts = asyncHandler(async (req, res) => {
 
-  const products = await Product.find();
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50; // Default to 50 items per page
+    const skip = (page - 1) * limit;
 
-  if (!products)
+    const products = await Product.find().skip(skip).limit(limit);
+    const totalProducts = await Product.countDocuments();
+
+    res.status(200).json(new ApiResponse(200,{
+      products,
+      currentPage: page,
+      totalPages: Math.ceil(totalProducts / limit),
+      totalProducts,
+    },"Get Product"));
+
+  } catch (err) {
+    console.error(err);
     throw new ApiError(
-      400,
-      "Product not found! may be due to invalid product Id. Please check and try again"
+      500,"Service Error while getting products. Please try again later."
     );
+  }
 
-  res.status(200).json(new ApiResponse(200, products, "Got your product"));
+  // const products = await Product.find();
+
+  // if (!products)
+  //   throw new ApiError(
+  //     400,
+  //     "Product not found! may be due to invalid product Id. Please check and try again"
+  //   );
+
+  // res.status(200).json(new ApiResponse(200, products, "Got your product"));
 });
 
 // This function will clear all the previously uploaded images and upload newer ones
@@ -185,7 +207,7 @@ const AddImages = asyncHandler(async (req, res) => {
   }
 
   // Validate the product existence
-  const product = await Product.findOne(productId);
+  const product = await Product.findOne({productId});
   if (!product) {
     throw new ApiError(
       400,
@@ -234,7 +256,7 @@ const UpdateProductDetails = asyncHandler(async (req, res) => {
   const { productId } = req.params;
   const { name, description, summery, wasPrice, price, rating } = req.body;
 
-  //   console.log(req);
+    // console.log(req.body);
 
   if (
     [name, description, summery].some((field) => !field || field.trim() === "")
